@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import fs from "fs";
-import path from "path"; 
+import path from "path";
 
 // --- Configuration ---
 const app = express();
@@ -40,7 +40,7 @@ app.get("/", (req, res) => {
  */
 app.post("/upload-chunk", upload.single("chunk"), async (req, res) => {
   try {
-    const { transferId, chunkIndex } = req.body;
+    const { transferId, chunkIndex, orgFileName } = req.body;
     const tempFilePath = req.file.path;
 
     if (!transferId || !chunkIndex) {
@@ -54,22 +54,16 @@ app.post("/upload-chunk", upload.single("chunk"), async (req, res) => {
     }
 
     // final, permanent path for the chunk
-    const finalChunkPath = path.join(transferDir, chunkIndex.toString());
+    const finalChunkPath = path.join(transferDir, orgFileName.toString());
 
     //Move file from its temp location to the final path
     // Using fs.promises.rename for a modern async approach
     await fs.promises.rename(tempFilePath, finalChunkPath);
 
-    const fileHash = crypto
-      .hash("sha256")
-      .update(fs.readFileSync(finalChunkPath))
-      .digest("hex");
-
     console.log(`Received and saved: ${transferId}, chunk ${chunkIndex}`);
 
     res.status(200).send({
       message: "File successfully",
-      fileHash,
       transferId,
       chunkIndex,
     });
